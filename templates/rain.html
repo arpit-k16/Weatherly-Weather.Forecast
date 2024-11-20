@@ -1,0 +1,119 @@
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weatherly-Rain Alert</title>
+    <link rel="icon" href="/static/images/logo-removebg-preview (1).png" type="image/png">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="rainy-background">
+<div class="container">
+    <h1>Rain Alert</h1>
+    <button onclick="getRainAlert()">Check for Rain</button>
+    <div id="alert"></div>
+</div>
+   
+
+    <script>
+        async function getRainAlert() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async position => {
+                    const { latitude, longitude } = position.coords;
+
+                    try {
+                        const response = await fetch('/rain-alert', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ latitude, longitude })
+                        });
+                        const data = await response.json();
+                        document.getElementById('alert').innerText = data.message;
+                    } catch (error) {
+                        document.getElementById('alert').innerText = "Error: Unable to retrieve rain alert.";
+                    }
+                }, () => {
+                    document.getElementById('alert').innerText = "Error: Unable to access your location.";
+                });
+            } else {
+                document.getElementById('alert').innerText = "Error: Geolocation is not supported by this browser.";
+            }
+        }
+    </script>
+
+</body>
+</html> -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weatherly-Rain Alert</title>
+    <link rel="icon" href="/static/images/logo-removebg-preview (1).png" type="image/png">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="rainy-background">
+    <div class="container">
+        <h1>Rain Alert</h1>
+
+        <!-- Updated Search Bar -->
+        <form id="rainForm" class="input-box">
+            <input type="text" id="place" placeholder="Enter location..." required>
+            <button type="button" id="current-location-btn">📍</button>
+            <button type="submit">Check Rain Alert</button>
+        </form>
+
+        <div id="alert" class="result-box hidden"></div>
+    </div>
+
+    <script>
+        // Handle "Current Location" button click
+        document.getElementById('current-location-btn').addEventListener('click', async () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(async (position) => {
+                    const { latitude, longitude } = position.coords;
+
+                    // Call reverse geocoding API to get the city name
+                    const geocodeUrl = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json`;
+                    try {
+                        const response = await fetch(geocodeUrl);
+                        const data = await response.json();
+                        const city = data.address.city || data.address.town || data.address.village;
+
+                        // Autofill the search bar with the city name
+                        document.getElementById('place').value = city;
+                    } catch (error) {
+                        alert("Could not fetch the city name. Please try again.");
+                    }
+                }, () => {
+                    alert("Unable to retrieve your location. Please enable location services.");
+                });
+            } else {
+                alert("Geolocation is not supported by this browser.");
+            }
+        });
+
+        // Handle form submission for rain alert
+        document.getElementById('rainForm').addEventListener('submit', async (event) => {
+            event.preventDefault();
+            const place = document.getElementById('place').value;
+
+            try {
+                // Send city name to the backend for rain alert
+                const response = await fetch('/rain-alert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ city: place })
+                });
+                const data = await response.json();
+                const alertElement = document.getElementById('alert');
+                alertElement.innerText = data.message;
+                alertElement.classList.remove('hidden'); // Ensure the alert box is visible
+            } catch (error) {
+                alert("Error: Unable to retrieve rain alert.");
+            }
+        });
+    </script>
+</body>
+</html>
